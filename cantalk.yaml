@@ -1,0 +1,47 @@
+# cantalk.yaml — Cantonese voice agent configuration
+# All paths/endpoints tuned for Mac Studio (192.168.1.59)
+
+name: "cantalk"
+version: "0.1.0"
+
+# Voice Activity Detection
+vad:
+  engine: silero
+  threshold: 0.5
+  min_speech_duration_ms: 250
+  min_silence_duration_ms: 500
+
+# Speech-to-Text (Cantonese optimized)
+stt:
+  engine: faster_whisper
+  model: "hongkongguys/faster-whisper-large-v3-cantonese"
+  device: "auto"            # MPS on Mac, CPU fallback
+  compute_type: "float16"   # GPU-optimized
+  language: "yue"           # Cantonese ISO code
+  beam_size: 5
+
+# Large Language Model (via OMLX on :8000)
+llm:
+  engine: openai            # OpenAI-compatible API
+  api_base: "http://127.0.0.1:8000/v1"
+  model: "Qwen3.5-4B-MLX-4bit"
+  max_tokens: 256
+  temperature: 0.7
+  system_prompt: |
+    你係 Lucille，小強嘅 AI 助手同好朋友。
+    講廣東話，語氣溫暖直接、簡潔唔長氣。
+    用口語廣東話，唔好扮書面語。
+    回應要短，一兩句夠就唔好講多。
+
+# Text-to-Speech (VoxCPM2 via HTTP API)
+tts:
+  engine: voxcpm2           # Custom adapter (src/cantalk/tts_voxcpm2.py)
+  api_base: "http://127.0.0.1:8002/synthesize"
+  speaker: "default"
+  language: "zh"
+
+# WebSocket Server
+server:
+  host: "0.0.0.0"
+  port: 8765
+  cors_origins: ["*"]
