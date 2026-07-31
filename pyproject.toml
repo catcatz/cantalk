@@ -1,0 +1,17 @@
+[project]
+name = "cantalk"
+version = "0.1.0"
+description = "Cantonese voice agent — local speech-to-speech pipeline for Mac"
+requires-python = ">=3.11"
+dependencies = [
+    "speech-to-speech>=0.4.0",
+    "faster-whisper",
+    "aiohttp",
+    "pyyaml",
+]
+
+[project.scripts]
+cantalk = "cantalk.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
