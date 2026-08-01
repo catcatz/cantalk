@@ -2,106 +2,69 @@
 <html lang="yue">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎙️ cantalk — 廣東話 Voice Agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🎙️ cantalk</title>
 <style>
   :root {
-    --bg: #0f0f14;
-    --card: #1a1a24;
-    --accent: #6c5ce7;
-    --accent2: #00cec9;
-    --text: #e0e0e0;
-    --sub: #888;
-    --danger: #e74c3c;
-    --border: #2a2a3a;
+    --bg: #0f0f14; --card: #1a1a24; --accent: #6c5ce7;
+    --text: #e0e0e0; --sub: #888; --border: #2a2a3a; --input: #12121c;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family: -apple-system, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     display: flex; justify-content: center; align-items: center;
-    min-height: 100vh; padding: 20px;
+    min-height: 100dvh; padding: 12px;
   }
   .container {
-    width: 100%; max-width: 600px;
-    background: var(--card);
-    border-radius: 24px; padding: 32px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    width: 100%; max-width: 500px; background: var(--card);
+    border-radius: 20px; padding: 24px 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
     border: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    height: 92dvh; max-height: 700px;
   }
-  .header {
-    text-align: center; margin-bottom: 28px;
-  }
-  .header h1 { font-size: 28px; margin-bottom: 4px; }
-  .header .sub { color: var(--sub); font-size: 14px; }
+  .header { text-align: center; margin-bottom: 16px; }
+  .header h1 { font-size: 24px; }
+  .header .sub { color: var(--sub); font-size: 12px; margin-top: 2px; }
   .status {
     display: flex; align-items: center; justify-content: center;
-    gap: 8px; margin-bottom: 24px; font-size: 13px; color: var(--sub);
+    gap: 6px; margin-bottom: 12px; font-size: 12px; color: var(--sub);
   }
-  .status .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--danger);
-  }
-  .status .dot.connected { background: #00b894; }
+  .status .dot { width:7px; height:7px; border-radius:50%; background:#e74c3c; }
+  .status .dot.connected { background:#00b894; }
   .chat {
-    background: #12121c;
-    border-radius: 16px; padding: 16px;
-    min-height: 200px; max-height: 350px;
-    overflow-y: auto; margin-bottom: 20px;
-    display: flex; flex-direction: column; gap: 10px;
+    flex: 1; background: var(--input); border-radius: 14px;
+    padding: 14px; overflow-y: auto; margin-bottom: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    -webkit-overflow-scrolling: touch;
   }
   .msg {
     padding: 10px 14px; border-radius: 14px;
     max-width: 85%; font-size: 15px; line-height: 1.5;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.2s ease; word-break: break-word;
   }
-  .msg.user {
-    background: var(--accent); color: #fff;
-    align-self: flex-end; border-bottom-right-radius: 4px;
-  }
-  .msg.assistant {
-    background: #22223a; color: var(--text);
-    align-self: flex-start; border-bottom-left-radius: 4px;
-  }
-  .typing {
-    color: var(--sub); font-size: 13px; font-style: italic;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  .controls {
-    display: flex; gap: 12px; align-items: center;
-  }
-  .btn {
-    border: none; border-radius: 12px; padding: 14px 24px;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
-  }
-  .btn-talk {
-    flex: 1; background: var(--accent); color: #fff;
-    justify-content: center; font-size: 18px;
-  }
-  .btn-talk:hover { background: #7c6df0; }
-  .btn-talk.recording {
-    background: var(--danger);
-    animation: pulse 1.2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.5); }
-    50% { box-shadow: 0 0 0 16px rgba(231,76,60,0); }
-  }
-  .btn-text {
-    background: var(--border); color: var(--text);
-  }
-  .btn-text:hover { background: #3a3a50; }
+  .msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg.assistant { background: #22223a; align-self: flex-start; border-bottom-left-radius: 4px; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .input-row { display: flex; gap: 8px; }
   .text-input {
-    flex: 1; background: #12121c; border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 16px; color: var(--text);
-    font-size: 15px; outline: none;
+    flex: 1; background: var(--input); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; color: var(--text);
+    font-size: 15px; outline: none; min-width: 0;
   }
   .text-input:focus { border-color: var(--accent); }
+  .btn {
+    border: none; border-radius: 12px; padding: 12px 18px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    background: var(--accent); color: #fff;
+    white-space: nowrap; transition: opacity 0.2s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn:disabled { opacity: 0.4; }
   .footer {
-    text-align: center; margin-top: 16px;
-    font-size: 12px; color: #444;
+    text-align: center; margin-top: 10px;
+    font-size: 11px; color: #444;
   }
 </style>
 </head>
@@ -109,131 +72,73 @@
 <div class="container">
   <div class="header">
     <h1>🎙️ cantalk</h1>
-    <div class="sub">廣東話 Voice Agent · 全部 Mac 本地行</div>
+    <div class="sub">廣東話 Voice Agent · Mac 本地</div>
   </div>
   <div class="status">
-    <span class="dot" id="statusDot"></span>
-    <span id="statusText">連接中...</span>
+    <span class="dot" id="dot"></span>
+    <span id="status">連接中...</span>
   </div>
   <div class="chat" id="chat"></div>
-  <div class="controls">
-    <button class="btn btn-talk" id="btnTalk">🎤 按住講野</button>
+  <div class="input-row">
+    <input class="text-input" id="input" placeholder="打廣東話... (例: 你好我叫小強)" autofocus>
+    <button class="btn" id="send" disabled>➤</button>
   </div>
-  <div class="footer">VAD → STT → LLM → TTS · Powered by cantalk</div>
+  <div class="footer">VAD → STT → LLM → TTS · cantalk</div>
 </div>
-
 <script>
-const WS_URL = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.hostname + ':8765/v1/realtime';
-let ws, audioCtx, stream, recorder, chunks = [];
-let isRecording = false, isConnected = false;
+const WS_URL = (location.protocol==='https:'?'wss:':'ws:')+'//'+location.hostname+':8765/v1/realtime';
+let ws, isConnected = false;
 
 const chat = document.getElementById('chat');
-const btnTalk = document.getElementById('btnTalk');
-const statusDot = document.getElementById('statusDot');
-const statusText = document.getElementById('statusText');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const dot = document.getElementById('dot');
+const status = document.getElementById('status');
 
 function addMsg(role, text) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + role;
-  div.textContent = text;
-  chat.appendChild(div);
+  const d = document.createElement('div');
+  d.className = 'msg '+role;
+  d.textContent = text;
+  chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
 }
-function setStatus(ok, text) {
+function setStatus(ok, txt) {
   isConnected = ok;
-  statusDot.className = 'dot' + (ok ? ' connected' : '');
-  statusText.textContent = text;
+  dot.className = 'dot'+(ok?' connected':'');
+  status.textContent = txt;
+  sendBtn.disabled = !ok;
+  input.disabled = !ok;
 }
 
-async function connect() {
-  try {
-    ws = new WebSocket(WS_URL);
-    ws.onopen = () => {
-      setStatus(true, '已連接 · 可以開始講野');
-      btnTalk.disabled = false;
-    };
-    ws.onclose = () => {
-      setStatus(false, '斷咗線 · 5秒後重試...');
-      btnTalk.disabled = true;
-      setTimeout(connect, 5000);
-    };
-    ws.onmessage = (e) => {
-      const ev = JSON.parse(e.data);
-      if (ev.type === 'response.output_audio_transcript.done') {
-        addMsg('assistant', ev.transcript);
-      } else if (ev.type === 'error') {
-        console.error('WS error:', ev.error);
-      }
-    };
-    ws.onerror = () => setStatus(false, '連接失敗');
-  } catch (e) {
-    setStatus(false, '連接失敗 · 5秒後重試');
-    setTimeout(connect, 5000);
-  }
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => { setStatus(true, '已連接 ✅'); };
+  ws.onclose = () => { setStatus(false, '斷線 · 3秒重試'); setTimeout(connect, 3000); };
+  ws.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'response.output_audio_transcript.done') {
+      addMsg('assistant', ev.transcript);
+    } else if (ev.type === 'error') {
+      addMsg('assistant', '❌ Error');
+    }
+  };
+  ws.onerror = () => { setStatus(false, '連接失敗 · 3秒重試'); setTimeout(connect, 3000); };
 }
 
-async function startRecording() {
-  try {
-    audioCtx = new AudioContext({ sampleRate: 16000 });
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
-    const source = audioCtx.createMediaStreamSource(stream);
-    const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-    source.connect(processor);
-    processor.connect(audioCtx.destination);
-    processor.onaudioprocess = (e) => {
-      if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
-      const input = e.inputBuffer.getChannelData(0);
-      const int16 = new Int16Array(input.length);
-      for (let i = 0; i < input.length; i++) {
-        int16[i] = Math.max(-32768, Math.min(32767, input[i] * 32768));
-      }
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(int16.buffer)));
-      ws.send(JSON.stringify({
-        type: 'input_audio_buffer.append',
-        audio: base64
-      }));
-    };
-  } catch (e) {
-    alert('咪高峰權限被拒: ' + e.message);
-  }
+function send() {
+  const text = input.value.trim();
+  if (!text || !isConnected) return;
+  addMsg('user', text);
+  input.value = '';
+  ws.send(JSON.stringify({
+    type: 'conversation.item.create',
+    item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: text }] }
+  }));
+  ws.send(JSON.stringify({ type: 'response.create', response: { modalities: ['text'] } }));
 }
 
-function stopRecording() {
-  isRecording = false;
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (audioCtx) { audioCtx.close(); audioCtx = null; }
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
-    ws.send(JSON.stringify({ type: 'response.create', response: { modalities: ['text'] } }));
-  }
-}
-
-btnTalk.addEventListener('pointerdown', async () => {
-  if (!isConnected) return;
-  isRecording = true;
-  btnTalk.classList.add('recording');
-  btnTalk.textContent = '🛑 放開就 send';
-  addMsg('user', '🎤 講緊野...');
-  await startRecording();
-});
-
-btnTalk.addEventListener('pointerup', () => {
-  if (!isRecording) return;
-  btnTalk.classList.remove('recording');
-  btnTalk.textContent = '🎤 按住講野';
-  stopRecording();
-});
-
-btnTalk.addEventListener('pointerleave', () => {
-  if (isRecording) {
-    btnTalk.classList.remove('recording');
-    btnTalk.textContent = '🎤 按住講野';
-    stopRecording();
-  }
-});
-
-// Init
-btnTalk.disabled = true;
+sendBtn.addEventListener('click', send);
+input.addEventListener('keydown', (e) => { if (e.key==='Enter') send(); });
 connect();
 </script>
 </body>
