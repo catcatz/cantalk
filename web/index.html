@@ -86,7 +86,9 @@
   <div class="footer">VAD → STT → LLM → TTS · cantalk</div>
 </div>
 <script>
-const WS_URL = (location.protocol==='https:'?'wss:':'ws:')+'//'+location.hostname+':8765/v1/realtime';
+// Auto-detect WebSocket URL: same host, port from server or proxied
+const WS_PATH = '/cantalk/ws/v1/realtime';
+const WS_URL = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + WS_PATH;
 let ws, isConnected = false;
 
 const chat = document.getElementById('chat');
