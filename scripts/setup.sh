@@ -13,6 +13,14 @@ fi
 
 echo "  ✅ python3: $(python3 --version)"
 
+# Use Homebrew Python 3.11+ (system default is 3.9)
+if [ -f /opt/homebrew/bin/python3.11 ]; then
+    PYTHON=/opt/homebrew/bin/python3.11
+    echo "  ✅ Using Homebrew Python: $($PYTHON --version)"
+else
+    PYTHON=python3
+fi
+
 # Check existing services
 echo ""
 echo "Checking VoxCPM2 (:8002)..."
@@ -24,14 +32,15 @@ curl -s --connect-timeout 3 http://127.0.0.1:8000/v1/models &>/dev/null && echo 
 # Install Python deps
 echo ""
 echo "Installing Python dependencies..."
-python3 -m venv venv
+$PYTHON -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
 pip install -e "."
 
 # Pre-cache STT model
 echo ""
 echo "Caching Cantonese STT model (first run will download)..."
-python3 -c "
+python -c "
 from faster_whisper import WhisperModel
 model = WhisperModel('hongkongguys/faster-whisper-large-v3-cantonese', device='cpu', compute_type='int8')
 print('  ✅ STT model cached')
