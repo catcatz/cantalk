@@ -16,13 +16,23 @@ echo "║        🎙️  cantalk — 廣東話 Agent       ║"
 echo "╠══════════════════════════════════════════╣"
 echo "║  VAD : Silero                            ║"
 echo "║  STT : faster-whisper-cantonese (MPS)    ║"
-echo "║  LLM : Qwen3.5-4B via OMLX :8000        ║"
-echo "║  TTS : VoxCPM2 :8002                     ║"
+echo "║  LLM : ThinkingCap-Qwen3.6 via OMLX      ║"
+echo "║  TTS : Qwen3-TTS (MLX)                   ║"
 echo "║  WS  : ws://localhost:8765/v1/realtime   ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
-python3 -m speech_to_speech \
-    --config cantalk.yaml \
-    --host 0.0.0.0 \
-    --port 8765
+exec speech-to-speech \
+    --llm_backend chat-completions \
+    --faster_whisper_stt_model_name "XA9/faster-whisper-large-v2-cantonese-2" \
+    --faster_whisper_stt_device auto \
+    --faster_whisper_stt_gen_language yue \
+    --model_name "ThinkingCap-Qwen3.6-27B-oQ4e-DWQ-MTP-Vision-MLX" \
+    --responses_api_base_url "http://127.0.0.1:8000/v1" \
+    --responses_api_api_key "sk-123456" \
+    --init_chat_prompt "你係 Lucille，小強嘅 AI 助手同好朋友。講廣東話，語氣溫暖直接、簡潔唔長氣。用口語廣東話，唔好扮書面語。回應要短，一兩句夠就唔好講多。" \
+    --qwen3_tts_model_name "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice" \
+    --qwen3_tts_device mps \
+    --qwen3_tts_language zh \
+    --ws_host 0.0.0.0 \
+    --ws_port 8765
