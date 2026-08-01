@@ -35,4 +35,5 @@ exec speech-to-speech \
     --qwen3_tts_device mps \
     --qwen3_tts_language zh \
     --ws_host 0.0.0.0 \
-    --ws_port 8765
+    --ws_port 8765 \
+    --num_pipelines 3

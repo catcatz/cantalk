@@ -85,7 +85,7 @@ function connect() {
   ws = new WebSocket(WS_URL);
   ws.onopen = () => { status(true,'已連接 ✅ · 按住掣講野'); };
   ws.onclose = () => { status(false,'斷線 · 3秒重試'); setTimeout(connect,3000); };
-  ws.onerror = () => { status(false,'重試中...'); };
+  ws.onerror = () => { ws.close(); };
   ws.onmessage = (e) => {
     const ev = JSON.parse(e.data);
     const t = ev.type;
