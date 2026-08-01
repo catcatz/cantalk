@@ -14,7 +14,7 @@ vad:
 # Speech-to-Text (Cantonese optimized)
 stt:
   engine: faster_whisper
-  model: "hongkongguys/faster-whisper-large-v3-cantonese"
+  model: "XA9/faster-whisper-large-v2-cantonese-2"
   device: "auto"            # MPS on Mac, CPU fallback
   compute_type: "float16"   # GPU-optimized
   language: "yue"           # Cantonese ISO code

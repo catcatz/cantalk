@@ -42,7 +42,7 @@ echo ""
 echo "Caching Cantonese STT model (first run will download)..."
 python -c "
 from faster_whisper import WhisperModel
-model = WhisperModel('hongkongguys/faster-whisper-large-v3-cantonese', device='cpu', compute_type='int8')
+model = WhisperModel('XA9/faster-whisper-large-v2-cantonese-2', device='cpu', compute_type='int8')
 print('  ✅ STT model cached')
 "
 
