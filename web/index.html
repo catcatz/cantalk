@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>🎙️ cantalk</title>
 <style>
-  :root { --bg:#0f0f14; --card:#1a1a24; --accent:#6c5ce7; --text:#e0e0e0; --sub:#888; --border:#2a2a3a; --input:#12121c; }
+  :root { --bg:#0f0f14; --card:#1a1a24; --accent:#6c5ce7; --text:#e0e0e0; --sub:#888; --border:#2a2a3a; --input:#12121c; --danger:#e74c3c; }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:-apple-system,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); display:flex; justify-content:center; align-items:center; min-height:100dvh; padding:8px; }
   .container { width:100%; max-width:500px; background:var(--card); border-radius:20px; padding:16px; box-shadow:0 8px 40px rgba(0,0,0,0.5); border:1px solid var(--border); display:flex; flex-direction:column; height:96dvh; max-height:750px; }
@@ -13,7 +13,11 @@
   .header h1 { font-size:22px; } .header .sub { color:var(--sub); font-size:11px; }
   .status { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:6px; font-size:11px; color:var(--sub); }
   .dot { width:7px; height:7px; border-radius:50%; background:#e74c3c; display:inline-block; }
-  .dot.on { background:#00b894; } .dot.listening { background:#f39c12; animation:pulse 0.6s infinite; }
+  .dot.on { background:#00b894; }
+  .dot.listening { background:#f39c12; animation:pulse 0.6s infinite; }
+  .dot.speaking { background:#00b894; animation:pulse 0.4s infinite; }
+  .dot.thinking { background:#6c5ce7; animation:pulse 0.8s infinite; }
+  .dot.playing { background:#0984e3; animation:pulse 0.7s infinite; }
   @keyframes pulse { 50% { opacity:0.3; } }
   .chat { flex:1; background:var(--input); border-radius:14px; padding:12px; overflow-y:auto; margin-bottom:10px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch; }
   .msg { padding:10px 14px; border-radius:14px; max-width:88%; font-size:15px; line-height:1.5; animation:fadeIn 0.2s ease; word-break:break-word; }
@@ -29,39 +33,133 @@
   }
   .btn-mic { flex:1; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; font-size:18px; }
   .btn-mic:active { background:#5a4bd1; }
-  .btn-mic.recording { background:#e74c3c; animation:micPulse 1s infinite; }
-  @keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.5)} 50%{box-shadow:0 0 0 14px rgba(231,76,60,0)} }
+  .btn-mic.listening { background:var(--danger); animation:micPulse 1.4s infinite; }
+  @keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.45)} 50%{box-shadow:0 0 0 12px rgba(231,76,60,0)} }
   .input-row { display:flex; gap:8px; }
   .text-input { flex:1; background:var(--input); border:1px solid var(--border); border-radius:12px; padding:12px; color:var(--text); font-size:15px; outline:none; min-width:0; }
   .text-input:focus { border-color:var(--accent); }
   .btn-send { background:var(--accent); color:#fff; padding:12px 20px; font-size:18px; }
   .btn-send:active { background:#5a4bd1; }
-  .btn-send:disabled,.btn-mic:disabled { opacity:0.4; }
+  .btn-send:disabled,.btn-mic:disabled { opacity:0.4; cursor:not-allowed; }
+  .vad-panel {
+    background:var(--input); border:1px solid var(--border); border-radius:12px;
+    padding:10px 12px; display:flex; flex-direction:column; gap:8px;
+  }
+  .vad-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; color:var(--sub); }
+  .vad-row strong { color:var(--text); font-weight:600; }
+  .vad-labels { display:flex; justify-content:space-between; font-size:10px; color:#555; }
+  .vad-slider {
+    -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px;
+    background:linear-gradient(90deg,#2d3436 0%, var(--accent) 100%); outline:none; cursor:pointer;
+  }
+  .vad-slider::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%;
+    background:#fff; border:2px solid var(--accent); box-shadow:0 1px 4px rgba(0,0,0,0.4);
+  }
+  .vad-slider::-moz-range-thumb {
+    width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--accent);
+  }
+  .level-wrap { position:relative; height:10px; background:#0a0a10; border-radius:999px; overflow:hidden; border:1px solid var(--border); }
+  .level-fill { position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,#00b894,#f39c12,#e74c3c); transition:width 0.06s linear; }
+  .level-thresh {
+    position:absolute; top:0; bottom:0; width:2px; background:#fff; opacity:0.85;
+    box-shadow:0 0 4px rgba(255,255,255,0.6); transform:translateX(-1px);
+  }
+  .vad-meta { display:flex; justify-content:space-between; font-size:10px; color:#666; font-variant-numeric:tabular-nums; }
   .footer { text-align:center; margin-top:6px; font-size:10px; color:#444; }
+  .debug-toggle { background:#242438; color:#aaa; padding:8px 12px; font-size:12px; }
+  .debug-panel { display:none; background:#09090f; border:1px solid var(--border); border-radius:10px; padding:8px; max-height:150px; overflow:auto; font:10px/1.4 ui-monospace,monospace; white-space:pre-wrap; color:#9aa; }
+  .debug-panel.open { display:block; }
+  .debug-line.error { color:#ff7675; } .debug-line.event { color:#74b9ff; } .debug-line.send { color:#55efc4; }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="header"><h1>🎙️ cantalk</h1><div class="sub">廣東話 Voice Agent · 按住講 · 放開聽</div></div>
+  <div class="header">
+    <h1>🎙️ cantalk</h1>
+    <div class="sub">廣東話 Voice Agent · 常開咪 · VAD 自動聽</div>
+  </div>
   <div class="status"><span class="dot" id="dot"></span><span id="stxt">連接中...</span></div>
   <div class="chat" id="chat"></div>
   <div class="controls">
-    <button class="btn btn-mic" id="btnMic" disabled>🎤 按住講野</button>
+    <button class="btn btn-mic" id="btnMic" disabled>🎤 開始聽</button>
+    <div class="vad-panel" id="vadPanel">
+      <div class="vad-row">
+        <span>VAD 靈敏度</span>
+        <strong id="vadSensLabel">50</strong>
+      </div>
+      <input class="vad-slider" id="vadSlider" type="range" min="0" max="100" value="50" step="1" aria-label="VAD sensitivity">
+      <div class="vad-labels"><span>鈍 · 少誤觸</span><span>敏 · 細聲都聽</span></div>
+      <div class="level-wrap" title="實時音量 · 白線 = 觸發門檻">
+        <div class="level-fill" id="levelFill"></div>
+        <div class="level-thresh" id="levelThresh"></div>
+      </div>
+      <div class="vad-meta">
+        <span id="vadEnergy">lvl —</span>
+        <span id="vadThreshTxt">門檻 —</span>
+      </div>
+    </div>
     <div class="input-row">
       <input class="text-input" id="input" placeholder="或者打廣東話..." disabled>
       <button class="btn btn-send" id="send" disabled>➤</button>
     </div>
+    <button class="btn debug-toggle" id="debugToggle">🪲 顯示 Debug</button>
+    <div class="debug-panel" id="debugPanel"></div>
   </div>
-  <div class="footer">VAD → STT → LLM → TTS · powered by cantalk</div>
+  <div class="footer">always-on mic · VAD → STT → LLM → TTS · cantalk</div>
 </div>
 
 <script>
-const WS_URL = (location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/cantalk/ws/v1/realtime';
-const SR = 16000;
+// Prefer same-origin proxy path; fall back to local speech-to-speech port when opened as a file/static host.
+const WS_URL = (() => {
+  if (location.protocol === 'file:') return 'ws://127.0.0.1:8765/v1/realtime';
+  const host = location.host;
+  if (!host || host === '') return 'ws://127.0.0.1:8765/v1/realtime';
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  // If served behind a reverse proxy under /cantalk
+  if (location.pathname.startsWith('/cantalk') || location.port === '' || location.port === '80' || location.port === '443') {
+    return `${proto}//${host}/cantalk/ws/v1/realtime`;
+  }
+  // Direct static serve (e.g. :5500) → talk to agent on 8765
+  const hostname = location.hostname || '127.0.0.1';
+  return `ws://${hostname}:8765/v1/realtime`;
+})();
 
-let ws, connected=false, recording=false;
-let audioCtx, stream, processor;
+const SR = 16000;
+const VAD_STORAGE_KEY = 'cantalk.vadSensitivity';
+const LEVEL_DISPLAY_MAX = 0.08; // energy scale for meter (abs-mean)
+
+// Base VAD knobs; thresholds are derived from sensitivity slider (0–100).
+const VAD = {
+  sensitivity: 50,          // 0 = hard to trigger, 100 = very sensitive
+  speechThreshold: 0.015,
+  silenceThreshold: 0.010,
+  // Frames of 4096 @ 16kHz ≈ 256ms each
+  minSpeechFrames: 2,       // ~0.5s speech before we mark "speaking"
+  silenceFramesToEnd: 3,    // ~0.75s silence → end of turn
+  hangoverMs: 200,          // keep streaming a bit after silence starts
+  lastEnergy: 0,
+};
+
+let ws = null;
+let connected = false;
+let listening = false;      // always-on mic toggle
+let streaming = false;      // mic hardware active
+let muted = false;          // mute uplink while bot talks (anti-echo)
+let awaitingResponse = false;
+let userSpeaking = false;
+let speechFrames = 0;
+let silenceFrames = 0;
 let curBotMsg = null;
+let curUserMsg = null;
+
+let captureCtx = null;
+let playCtx = null;
+let mediaStream = null;
+let processor = null;
+let playQueue = [];
+let playSource = null;
+let playing = false;
 
 const chat = document.getElementById('chat');
 const input = document.getElementById('input');
@@ -69,95 +167,609 @@ const sendBtn = document.getElementById('send');
 const btnMic = document.getElementById('btnMic');
 const dot = document.getElementById('dot');
 const stxt = document.getElementById('stxt');
+const vadSlider = document.getElementById('vadSlider');
+const vadSensLabel = document.getElementById('vadSensLabel');
+const levelFill = document.getElementById('levelFill');
+const levelThresh = document.getElementById('levelThresh');
+const vadEnergy = document.getElementById('vadEnergy');
+const vadThreshTxt = document.getElementById('vadThreshTxt');
+const debugToggle = document.getElementById('debugToggle');
+const debugPanel = document.getElementById('debugPanel');
+const DEBUG_MAX = 300;
 
-function addMsg(role,text) {
-  if (curBotMsg && role==='bot') { curBotMsg.textContent=text; curBotMsg=null; return; }
-  const d=document.createElement('div'); d.className='msg '+role; d.textContent=text;
-  chat.appendChild(d); chat.scrollTop=chat.scrollHeight; return d;
+function debugLog(kind, value) {
+  const line = document.createElement('div');
+  line.className = 'debug-line ' + kind;
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  line.textContent = `${new Date().toLocaleTimeString()} [${kind}] ${text}`;
+  debugPanel.appendChild(line);
+  while (debugPanel.children.length > DEBUG_MAX) debugPanel.firstChild.remove();
+  debugPanel.scrollTop = debugPanel.scrollHeight;
+  console.log('[cantalk]', kind, value);
 }
-function status(on,txt) {
-  connected=on; dot.className='dot'+(on?' on':'');
-  stxt.textContent=txt; btnMic.disabled=!on; sendBtn.disabled=!on; input.disabled=!on;
+debugToggle.addEventListener('click', () => {
+  debugPanel.classList.toggle('open');
+  debugToggle.textContent = debugPanel.classList.contains('open') ? '🪲 隱藏 Debug' : '🪲 顯示 Debug';
+});
+
+/** Map slider 0–100 → client energy thresholds + server VAD threshold. */
+function applySensitivity(raw) {
+  const s = Math.max(0, Math.min(100, Number(raw) || 0));
+  VAD.sensitivity = s;
+
+  // Higher sensitivity → lower energy needed to count as speech.
+  // 0 → ~0.045, 50 → ~0.015, 100 → ~0.004
+  const t = 0.004 + (0.045 - 0.004) * Math.pow(1 - s / 100, 1.35);
+  VAD.speechThreshold = t;
+  VAD.silenceThreshold = t * 0.65;
+
+  // Quieter rooms / higher sens → end turn a bit sooner after silence.
+  VAD.silenceFramesToEnd = s >= 70 ? 2 : s <= 25 ? 4 : 3;
+  // Soft speech needs fewer consecutive frames at high sens.
+  VAD.minSpeechFrames = s >= 75 ? 1 : 2;
+
+  // Server Realtime VAD threshold is inverted vs our energy (0=sensitive, 1=strict).
+  VAD.serverThreshold = Math.max(0.05, Math.min(0.95, 1 - s / 100));
+
+  if (vadSensLabel) vadSensLabel.textContent = String(s);
+  if (vadSlider && Number(vadSlider.value) !== s) vadSlider.value = String(s);
+
+  const threshPct = Math.min(100, (VAD.speechThreshold / LEVEL_DISPLAY_MAX) * 100);
+  if (levelThresh) levelThresh.style.left = threshPct + '%';
+  if (vadThreshTxt) {
+    vadThreshTxt.textContent = `門檻 ${VAD.speechThreshold.toFixed(3)} · srv ${VAD.serverThreshold.toFixed(2)}`;
+  }
+  updateLevelMeter(VAD.lastEnergy);
 }
 
-// WebSocket
+function updateLevelMeter(energy) {
+  VAD.lastEnergy = energy;
+  const pct = Math.min(100, (energy / LEVEL_DISPLAY_MAX) * 100);
+  if (levelFill) {
+    levelFill.style.width = pct + '%';
+    // Tint when over speech threshold
+    levelFill.style.opacity = energy >= VAD.speechThreshold ? '1' : '0.75';
+  }
+  if (vadEnergy) {
+    const tag = energy >= VAD.speechThreshold ? 'SPEECH' : energy < VAD.silenceThreshold ? 'quiet' : '~';
+    vadEnergy.textContent = `lvl ${energy.toFixed(3)} ${tag}`;
+  }
+}
+
+function loadSensitivity() {
+  const saved = localStorage.getItem(VAD_STORAGE_KEY);
+  const n = saved != null ? parseInt(saved, 10) : 50;
+  applySensitivity(Number.isFinite(n) ? n : 50);
+}
+
+function saveSensitivity() {
+  localStorage.setItem(VAD_STORAGE_KEY, String(VAD.sensitivity));
+}
+
+function addMsg(role, text) {
+  if (role === 'bot' && curBotMsg) {
+    curBotMsg.textContent = text;
+    return curBotMsg;
+  }
+  if (role === 'user' && curUserMsg) {
+    curUserMsg.textContent = text;
+    return curUserMsg;
+  }
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.textContent = text;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  if (role === 'bot') curBotMsg = d;
+  if (role === 'user') curUserMsg = d;
+  return d;
+}
+
+function clearCurBot() { curBotMsg = null; }
+function clearCurUser() { curUserMsg = null; }
+
+function setStatus(kind, text) {
+  // kind: off | on | listening | speaking | thinking | playing
+  connected = kind !== 'off';
+  dot.className = 'dot' + (kind === 'off' ? '' : ' ' + (kind === 'on' ? 'on' : kind));
+  stxt.textContent = text;
+  const ready = kind !== 'off';
+  btnMic.disabled = !ready;
+  sendBtn.disabled = !ready;
+  input.disabled = !ready;
+  if (listening) {
+    btnMic.classList.add('listening');
+    btnMic.textContent = '🛑 停止聽';
+  } else {
+    btnMic.classList.remove('listening');
+    btnMic.textContent = '🎤 開始聽';
+  }
+}
+
+function refreshListeningStatus() {
+  if (!connected) return;
+  if (!listening) {
+    setStatus('on', '已連接 ✅ · 撳「開始聽」');
+    return;
+  }
+  if (playing) {
+    setStatus('playing', '🔊 播放緊回應...');
+  } else if (awaitingResponse) {
+    setStatus('thinking', '🤔 AI 諗緊...');
+  } else if (userSpeaking) {
+    setStatus('speaking', '🗣️ 聽到你講緊...');
+  } else {
+    setStatus('listening', '👂 常開咪 · 等你講野');
+  }
+}
+
+function pcm16ToBase64(int16) {
+  const bytes = new Uint8Array(int16.buffer, int16.byteOffset, int16.byteLength);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function base64ToInt16(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Int16Array(bytes.buffer);
+}
+
+function ensurePlayCtx() {
+  if (!playCtx || playCtx.state === 'closed') {
+    playCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SR });
+  }
+  if (playCtx.state === 'suspended') playCtx.resume();
+  return playCtx;
+}
+
+function enqueuePlayPcm16(int16) {
+  if (!int16 || !int16.length) return;
+  playQueue.push(int16);
+  if (!playing) drainPlayQueue();
+}
+
+async function drainPlayQueue() {
+  if (playing) return;
+  playing = true;
+  muted = true; // anti-echo while TTS plays
+  refreshListeningStatus();
+  try {
+    const ctx = ensurePlayCtx();
+    while (playQueue.length) {
+      const int16 = playQueue.shift();
+      const f32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) f32[i] = int16[i] / 32768;
+      const buf = ctx.createBuffer(1, f32.length, SR);
+      buf.copyToChannel(f32, 0);
+      await new Promise((resolve) => {
+        const src = ctx.createBufferSource();
+        playSource = src;
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.onended = resolve;
+        src.start();
+      });
+      playSource = null;
+    }
+  } finally {
+    playing = false;
+    muted = false;
+    // Brief hangover so room reverb doesn't retrigger VAD
+    setTimeout(() => {
+      if (!playing) {
+        speechFrames = 0;
+        silenceFrames = 0;
+        userSpeaking = false;
+        refreshListeningStatus();
+      }
+    }, VAD.hangoverMs);
+    refreshListeningStatus();
+  }
+}
+
+function stopPlayback() {
+  playQueue = [];
+  if (playSource) {
+    try { playSource.stop(); } catch (_) {}
+    playSource = null;
+  }
+  playing = false;
+  muted = false;
+}
+
+function sendJson(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    debugLog('send', obj);
+    ws.send(JSON.stringify(obj));
+  }
+}
+
+function configureSession() {
+  // speech-to-speech validates against the OpenAI Realtime schema.  Its
+  // backend owns the actual 16 kHz VAD/STT pipeline, so do not send the
+  // browser's 16 kHz format or an incomplete server_vad object here.
+  // A rejected session.update leaves instructions unset and causes the
+  // misleading "no instructions and no input" error on the next response.
+  sendJson({
+    type: 'session.update',
+    session: {
+      type: 'realtime',
+      instructions: '你係 Lucille。必須全程只用香港粵語口語繁體字回答，禁止英文、普通話、書面中文。回答簡短直接。',
+      output_modalities: ['audio'],
+    },
+  });
+}
+
+function endOfTurn() {
+  if (!listening || awaitingResponse || playing) return;
+  awaitingResponse = true;
+  userSpeaking = false;
+  speechFrames = 0;
+  silenceFrames = 0;
+  clearCurUser();
+  curBotMsg = addMsg('bot', '...');
+  refreshListeningStatus();
+
+  // Commit buffer + request audio+text response.
+  // Safe even if server VAD already committed (server may no-op or error; we handle errors).
+  // The server's client-event schema intentionally does not implement
+  // input_audio_buffer.commit; audio is already streamed continuously.
+  sendJson({
+    type: 'response.create',
+    response: { output_modalities: ['audio'] },
+  });
+}
+
+function onAudioFrame(float32) {
+  // Abs-mean energy (same scale as VAD thresholds)
+  let sum = 0;
+  for (let i = 0; i < float32.length; i++) sum += Math.abs(float32[i]);
+  const energy = sum / float32.length;
+  updateLevelMeter(energy);
+
+  // Mute uplink while bot speaks — still "open" mic hardware, no send
+  if (muted || awaitingResponse || playing) {
+    return;
+  }
+
+  // Stream to server continuously for server-side VAD/STT
+  const i16 = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    i16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  sendJson({ type: 'input_audio_buffer.append', audio: pcm16ToBase64(i16) });
+
+  // Client-side VAD fallback: detect speech → silence end-of-turn
+  if (energy >= VAD.speechThreshold) {
+    speechFrames++;
+    silenceFrames = 0;
+    if (!userSpeaking && speechFrames >= VAD.minSpeechFrames) {
+      userSpeaking = true;
+      clearCurUser();
+      addMsg('user', '🎤 ...');
+      refreshListeningStatus();
+    }
+  } else if (energy < VAD.silenceThreshold) {
+    if (userSpeaking) {
+      silenceFrames++;
+      if (silenceFrames >= VAD.silenceFramesToEnd) {
+        endOfTurn();
+      }
+    } else {
+      speechFrames = 0;
+      silenceFrames = 0;
+    }
+  }
+}
+
+async function startMic() {
+  if (streaming) return;
+  try {
+    captureCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SR });
+    if (captureCtx.state === 'suspended') await captureCtx.resume();
+
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+
+    const src = captureCtx.createMediaStreamSource(mediaStream);
+
+    // ScriptProcessor is deprecated but widely supported; AudioWorklet needs extra files.
+    const bufferSize = 4096;
+    processor = captureCtx.createScriptProcessor(bufferSize, 1, 1);
+    processor.onaudioprocess = (e) => {
+      if (!listening || !streaming) return;
+      const buf = e.inputBuffer.getChannelData(0);
+      // Copy — the underlying buffer is reused
+      const copy = new Float32Array(buf.length);
+      copy.set(buf);
+      onAudioFrame(copy);
+    };
+    src.connect(processor);
+    // Keep processor alive without audible loopback
+    const mute = captureCtx.createGain();
+    mute.gain.value = 0;
+    processor.connect(mute);
+    mute.connect(captureCtx.destination);
+
+    streaming = true;
+    speechFrames = 0;
+    silenceFrames = 0;
+    userSpeaking = false;
+    refreshListeningStatus();
+  } catch (err) {
+    console.error(err);
+    listening = false;
+    addMsg('info', '🎤 咪高峰權限被拒或唔可用');
+    refreshListeningStatus();
+  }
+}
+
+function stopMic() {
+  streaming = false;
+  listening = false;
+  userSpeaking = false;
+  speechFrames = 0;
+  silenceFrames = 0;
+  muted = false;
+
+  if (processor) {
+    try { processor.disconnect(); } catch (_) {}
+    processor.onaudioprocess = null;
+    processor = null;
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((t) => t.stop());
+    mediaStream = null;
+  }
+  if (captureCtx) {
+    captureCtx.close().catch(() => {});
+    captureCtx = null;
+  }
+  updateLevelMeter(0);
+  refreshListeningStatus();
+}
+
+function handleServerEvent(ev) {
+  const t = ev.type || '';
+  debugLog(t === 'error' ? 'error' : 'event', ev);
+
+  // Server VAD lifecycle (if supported)
+  if (t === 'input_audio_buffer.speech_started') {
+    if (!awaitingResponse && !playing) {
+      userSpeaking = true;
+      clearCurUser();
+      addMsg('user', '🎤 ...');
+      refreshListeningStatus();
+    }
+    return;
+  }
+  if (t === 'input_audio_buffer.speech_stopped') {
+    // Server ended the turn — if we haven't committed yet, wait for response events
+    if (!awaitingResponse && !playing) {
+      awaitingResponse = true;
+      userSpeaking = false;
+      curBotMsg = curBotMsg || addMsg('bot', '...');
+      refreshListeningStatus();
+    }
+    return;
+  }
+
+  // User transcript
+  if (t === 'conversation.item.input_audio_transcription.completed') {
+    const text = ev.transcript || ev.text || '';
+    if (text) {
+      if (curUserMsg) curUserMsg.textContent = text;
+      else addMsg('user', text);
+      clearCurUser();
+    }
+    return;
+  }
+
+  // Streaming text
+  if (t === 'response.text.delta' || t === 'response.audio_transcript.delta' || t === 'response.output_audio_transcript.delta') {
+    const delta = ev.delta || '';
+    if (!delta) return;
+    if (!curBotMsg) curBotMsg = addMsg('bot', '');
+    curBotMsg.textContent = (curBotMsg.textContent === '...' ? '' : curBotMsg.textContent) + delta;
+    return;
+  }
+
+  if (
+    t === 'response.text.done' ||
+    t === 'response.audio_transcript.done' ||
+    t === 'response.output_audio_transcript.done'
+  ) {
+    const text = ev.transcript || ev.text || (curBotMsg && curBotMsg.textContent) || '';
+    if (text && text !== '...') {
+      if (curBotMsg) curBotMsg.textContent = text;
+      else addMsg('bot', text);
+    }
+    clearCurBot();
+    return;
+  }
+
+  // Audio deltas
+  if (t === 'response.output_audio.delta' || t === 'response.audio.delta') {
+    const b64 = ev.delta || '';
+    if (!b64) return;
+    try {
+      enqueuePlayPcm16(base64ToInt16(b64));
+    } catch (err) {
+      console.warn('audio decode failed', err);
+    }
+    return;
+  }
+
+  if (t === 'response.created') {
+    awaitingResponse = true;
+    if (!curBotMsg) curBotMsg = addMsg('bot', '...');
+    refreshListeningStatus();
+    return;
+  }
+
+  if (t === 'response.done') {
+    awaitingResponse = false;
+    clearCurBot();
+    clearCurUser();
+    // If no audio was queued, just resume listening
+    if (!playing && playQueue.length === 0) {
+      muted = false;
+      refreshListeningStatus();
+    }
+    return;
+  }
+
+  if (t === 'error') {
+    const msg = typeof ev.error === 'string'
+      ? ev.error
+      : (ev.error && (ev.error.message || JSON.stringify(ev.error))) || JSON.stringify(ev);
+    // Do not hide protocol errors: the debug panel is specifically for these.
+    addMsg('info', '❌ ' + String(msg).slice(0, 200));
+    awaitingResponse = false;
+    if (curBotMsg && curBotMsg.textContent === '...') {
+      curBotMsg.remove();
+      curBotMsg = null;
+    }
+    muted = false;
+    refreshListeningStatus();
+  }
+}
+
 function connect() {
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
+  setStatus('off', '連接中...');
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => { status(true,'已連接 ✅ · 按住掣講野'); };
-  ws.onclose = () => { status(false,'斷線 · 3秒重試'); setTimeout(connect,3000); };
-  ws.onerror = () => { ws.close(); };
+
+  ws.onopen = () => {
+    debugLog('event', { type: 'ws.open', url: WS_URL });
+    configureSession();
+    if (listening) {
+      // Resume stream after reconnect
+      startMic().then(() => refreshListeningStatus());
+    } else {
+      setStatus('on', '已連接 ✅ · 撳「開始聽」');
+    }
+  };
+
+  ws.onclose = () => {
+    debugLog('error', { type: 'ws.close' });
+    setStatus('off', '斷線 · 3秒重試');
+    // Keep listening flag; mic stays open if user wanted always-on, will resume on reconnect
+    if (streaming) {
+      // Stop hardware until reconnected to avoid dangling tracks
+      if (processor) {
+        try { processor.disconnect(); } catch (_) {}
+        processor.onaudioprocess = null;
+        processor = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((t) => t.stop());
+        mediaStream = null;
+      }
+      if (captureCtx) {
+        captureCtx.close().catch(() => {});
+        captureCtx = null;
+      }
+      streaming = false;
+    }
+    setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => {
+    debugLog('error', { type: 'ws.error' });
+    try { ws.close(); } catch (_) {}
+  };
+
   ws.onmessage = (e) => {
-    const ev = JSON.parse(e.data);
-    const t = ev.type;
-    if (t === 'response.output_audio_transcript.done') {
-      if (curBotMsg) { curBotMsg.textContent = ev.transcript; curBotMsg = null; }
-      status(true,'已連接 ✅');
-    } else if (t === 'response.done') {
-      status(true,'已連接 ✅');
-    } else if (t === 'error') {
-      addMsg('info','❌ '+JSON.stringify(ev.error).slice(0,200));
-      if (curBotMsg) { curBotMsg.remove(); curBotMsg=null; }
-      status(true,'已連接 ✅');
+    try {
+      handleServerEvent(JSON.parse(e.data));
+    } catch (err) {
+      debugLog('error', `bad message: ${err}`);
+      console.warn('bad message', err);
     }
   };
 }
 
-// Voice: stream continuously, server's VAD auto-detects silence
-async function startMic() {
-  try {
-    audioCtx = new AudioContext({ sampleRate:SR });
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: { sampleRate:SR, channelCount:1, echoCancellation:true, noiseSuppression:true }
-    });
-    const src = audioCtx.createMediaStreamSource(stream);
-    processor = audioCtx.createScriptProcessor(4096,1,1);
-    src.connect(processor); processor.connect(audioCtx.destination);
-    processor.onaudioprocess = (e) => {
-      if (!recording || !ws || ws.readyState!==WebSocket.OPEN) return;
-      const buf = e.inputBuffer.getChannelData(0);
-      const i16 = new Int16Array(buf.length);
-      for (let i=0;i<buf.length;i++) i16[i]=Math.max(-32768,Math.min(32767,buf[i]*32768));
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(i16.buffer)));
-      ws.send(JSON.stringify({ type:'input_audio_buffer.append', audio:b64 }));
-    };
-  } catch(err) { addMsg('info','🎤 咪高峰被拒'); console.error(err); }
-}
-function stopMic() {
-  recording = false;
-  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  if (audioCtx) { audioCtx.close(); audioCtx=null; }
-}
-
-btnMic.addEventListener('pointerdown', async () => {
-  if (!connected || recording) return;
-  recording = true; btnMic.classList.add('recording'); btnMic.textContent='🛑 放開';
-  dot.className='dot listening'; stxt.textContent='聽緊你講野...';
-  curBotMsg = null;
-  await startMic();
+// Toggle always-on listening
+btnMic.addEventListener('click', async () => {
+  if (!connected) return;
+  if (listening) {
+    stopPlayback();
+    awaitingResponse = false;
+    stopMic();
+    addMsg('info', '已停止常開咪');
+    setStatus('on', '已連接 ✅ · 撳「開始聽」');
+  } else {
+    listening = true;
+    btnMic.classList.add('listening');
+    btnMic.textContent = '🛑 停止聽';
+    addMsg('info', '常開咪已開 · VAD 會自動檢測你講完');
+    await startMic();
+  }
 });
-btnMic.addEventListener('pointerup', () => {
-  if (!recording) return;
-  btnMic.classList.remove('recording'); btnMic.textContent='🎤 按住講野';
-  stopMic();
-  // Server VAD will auto-detect silence and trigger response
-  curBotMsg = addMsg('bot','...');
-  dot.className='dot listening'; stxt.textContent='AI 諗緊...';
-});
-btnMic.addEventListener('pointerleave', () => { if(recording) btnMic.dispatchEvent(new PointerEvent('pointerup')); });
 
-// Text
+// Text fallback
 function sendText() {
   const text = input.value.trim();
   if (!text || !connected) return;
-  addMsg('user', text); input.value='';
-  ws.send(JSON.stringify({ type:'conversation.item.create', item:{ type:'message', role:'user', content:[{type:'input_text',text}] } }));
-  ws.send(JSON.stringify({ type:'response.create', response:{ modalities:['text'] } }));
-  curBotMsg = addMsg('bot','...');
-  dot.className='dot listening'; stxt.textContent='AI 諗緊...';
+  clearCurUser();
+  addMsg('user', text);
+  clearCurUser();
+  input.value = '';
+  awaitingResponse = true;
+  curBotMsg = addMsg('bot', '...');
+  refreshListeningStatus();
+  sendJson({
+    type: 'conversation.item.create',
+    item: {
+      type: 'message',
+      role: 'user',
+      content: [{ type: 'input_text', text }],
+    },
+  });
+  sendJson({
+    type: 'response.create',
+    response: { output_modalities: ['audio'] },
+  });
 }
 sendBtn.addEventListener('click', sendText);
-input.addEventListener('keydown', (e) => { if(e.key==='Enter') sendText(); });
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendText();
+});
 
+// Pause uplink when tab hidden (save battery); keep listening intent
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    muted = true;
+  } else if (!playing && !awaitingResponse) {
+    muted = false;
+  }
+});
+
+// VAD sensitivity slider — live update + persist + push server VAD if connected
+function onSensitivityInput() {
+  applySensitivity(vadSlider.value);
+  saveSensitivity();
+  if (connected) configureSession();
+}
+vadSlider.addEventListener('input', onSensitivityInput);
+vadSlider.addEventListener('change', onSensitivityInput);
+
+loadSensitivity();
 connect();
 </script>
 </body>
